@@ -1,0 +1,103 @@
+import sqlite3
+conn = sqlite3.connect("hw.db")
+cursor = conn.cursor()
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS products (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    product_title TEXT NOT NULL CHECK(length(product_title) <= 200),
+    price REAL NOT NULL DEFAULT 0.0,
+    quantity INTEGER NOT NULL DEFAULT 0
+)
+""")
+conn.commit()
+
+
+def insert_products():
+    products = [
+        ("Мыло детское", 150, 12),
+        ("Жидкое мыло ваниль", 180, 23),
+        ("Шампунь", 700, 18),
+        ("Зубная паста", 89, 15),
+        ("Щетка", 45, 20),
+        ("Гель для душа", 499, 17),
+        ("Крем для рук", 75, 12),
+        ("Стиральный порошок", 600, 24),
+        ("Моющее средство", 295, 19),
+        ("Салфетки", 30, 25),
+        ("Бумага туалетная", 60, 18),
+        ("Освежитель воздуха", 210, 16),
+        ("Мыло хозяйственное", 49, 14),
+        ("Средство для мытья окон", 130, 14),
+        ("Губка для посуды", 35, 30)
+    ]
+
+    cursor.executemany("INSERT INTO products (product_title, price, quantity) VALUES (?, ?, ?)", products)
+    conn.commit()
+
+
+def update_quantity(product_id, new_quantity):
+    cursor.execute("UPDATE products SET quantity = ? WHERE id = ?", (new_quantity, product_id))
+    conn.commit()
+
+def update_price(product_id, new_price):
+    cursor.execute("UPDATE products SET price = ? WHERE id = ?", (new_price, product_id))
+    conn.commit()
+
+
+def delete_product(product_id):
+    cursor.execute("DELETE FROM products WHERE id = ?", (product_id,))
+    conn.commit()
+
+
+def get_all_products():
+    cursor.execute("SELECT * FROM products")
+    products = cursor.fetchall()
+    for product in products:
+        print(product)
+
+def get_cheap_products():
+    cursor.execute("""
+    SELECT * FROM products
+    WHERE price < 100 AND quantity > 5
+    """)
+    products = cursor.fetchall()
+    for product in products:
+        print(product)
+
+def search_products(keyword):
+    cursor.execute("""
+    SELECT * FROM products
+    WHERE product_title LIKE ?
+    """, ('%' + keyword + '%',))
+    products = cursor.fetchall()
+    for product in products:
+        print(product)
+
+
+if __name__ == "__main__":
+    print("Добавляем товары...")
+    insert_products()
+
+    print("\nВсе товары:")
+    get_all_products()
+
+    print("\nОбновляем количество товара с id=1:")
+    update_quantity(1, 50)
+    get_all_products()
+
+    print("\nОбновляем цену товара с id=2:")
+    update_price(2, 80.0)
+    get_all_products()
+
+    print("\nУдаляем товар с id=3:")
+    delete_product(3)
+    get_all_products()
+
+    print("\nТовары дешевле 100 сом и количество > 5:")
+    get_cheap_products()
+
+    print("\nПоиск по слову 'мыло':")
+    search_products("мыло")
+
+    conn.close()
